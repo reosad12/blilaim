@@ -29,8 +29,13 @@ jobs:
 
       - name: Fix gradle.properties
         run: |
-          find project -name "gradle.properties" -exec cat {} \;
-          find project -name "gradle.properties" -exec sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx2g -Xms512m/' {} \;
+          find project -name "gradle.properties" | while read f; do
+            echo "=== Found: $f ==="
+            cat "$f"
+            printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$f"
+            echo "=== Fixed: $f ==="
+            cat "$f"
+          done
 
       - name: Make gradlew executable
         run: chmod +x project/BilliardAim/gradlew
