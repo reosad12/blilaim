@@ -27,32 +27,24 @@ jobs:
       - name: Extract ZIP
         run: unzip BilliardAim_ready.zip -d project
 
-      - name: Show extracted structure
-        run: find project -type f | sort
-
       - name: Fix ALL gradle.properties
         run: |
           find project -name "gradle.properties" | while read f; do
-            echo ">>> Fixing: $f"
-            cat "$f"
             printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$f"
-            echo ">>> After fix:"
-            cat "$f"
           done
-          # Also fix ~/.gradle/gradle.properties if exists
-          if [ -f "$HOME/.gradle/gradle.properties" ]; then
-            printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$HOME/.gradle/gradle.properties"
-          fi
+          mkdir -p "$HOME/.gradle"
+          printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$HOME/.gradle/gradle.properties"
 
       - name: Make gradlew executable
         run: find project -name "gradlew" -exec chmod +x {} \;
 
       - name: Build Debug APK
+        env:
+          GRADLE_OPTS: "-Xmx2g -Xms512m"
+          _JAVA_OPTIONS: "-Xmx2g -Xms512m"
+          JAVA_TOOL_OPTIONS: "-Xmx2g -Xms512m"
         run: |
-          GRADLEW=$(find project -name "gradlew" | head -1)
-          PROJ_DIR=$(dirname "$GRADLEW")
-          echo "Using gradlew: $GRADLEW"
-          cd "$PROJ_DIR"
+          cd project/BilliardAim
           ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
