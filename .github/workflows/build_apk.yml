@@ -27,7 +27,7 @@ jobs:
       - name: Extract ZIP
         run: unzip BilliardAim_ready.zip -d project
 
-      - name: Fix ALL gradle.properties
+      - name: Fix gradle.properties
         run: |
           find project -name "gradle.properties" | while read f; do
             printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$f"
@@ -35,22 +35,10 @@ jobs:
           mkdir -p "$HOME/.gradle"
           printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$HOME/.gradle/gradle.properties"
 
-      - name: Patch gradlew JVM args
-        run: |
-          find project -name "gradlew" | while read f; do
-            chmod +x "$f"
-            # حذف هر DEFAULT_JVM_OPTS یا -Xmx/-Xms هاردکد شده در gradlew
-            sed -i 's/DEFAULT_JVM_OPTS=.*/DEFAULT_JVM_OPTS=""/' "$f"
-            sed -i 's/-Xmx[0-9]*[gGmMkK]//g' "$f"
-            sed -i 's/-Xms[0-9]*[gGmMkK]//g' "$f"
-            echo "=== gradlew JVM lines after patch ==="
-            grep -n "Xmx\|Xms\|JVM_OPTS" "$f" || echo "clean"
-          done
-
       - name: Build Debug APK
         run: |
           cd project/BilliardAim
-          ./gradlew assembleDebug --no-daemon
+          gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
