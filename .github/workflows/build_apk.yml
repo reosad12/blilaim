@@ -27,29 +27,39 @@ jobs:
       - name: Extract ZIP
         run: unzip BilliardAim_ready.zip -d project
 
+      - name: Show project structure
+        run: find project -type f -name "*.gradle" -o -name "*.xml" | head -30
+
       - name: Fix gradle.properties
         run: |
           find project -name "gradle.properties" | while read f; do
-            printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$f"
+            echo "Fixing: $f"
+            printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\nandroid.useAndroidX=true\nkotlin.code.style=official\n' > "$f"
           done
 
       - name: Add namespace to app/build.gradle
         run: |
           BUILD_GRADLE=$(find project -path "*/app/build.gradle" | head -1)
-          echo "Found: $BUILD_GRADLE"
-          # اگه namespace قبلاً نیست، اضافه کن
+          echo "Target file: $BUILD_GRADLE"
+          cat "$BUILD_GRADLE"
           if ! grep -q "namespace" "$BUILD_GRADLE"; then
             sed -i "s/android {/android {\n    namespace 'com.billiardaim'/" "$BUILD_GRADLE"
+            echo "✓ namespace added"
+          else
+            echo "✓ namespace already present"
           fi
-          echo "=== build.gradle android block ==="
-          grep -A3 "android {" "$BUILD_GRADLE"
+          echo "--- Result ---"
+          grep -A5 "android {" "$BUILD_GRADLE"
 
       - name: Build Debug APK
         run: |
           PROJECT_DIR=$(find project -name "settings.gradle" | head -1 | xargs dirname)
           echo "Building in: $PROJECT_DIR"
           cd "$PROJECT_DIR"
-          gradle assembleDebug --no-daemon --stacktrace
+          gradle assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            --info 2>&1 | tail -100
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
