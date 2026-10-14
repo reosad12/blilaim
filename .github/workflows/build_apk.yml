@@ -32,13 +32,24 @@ jobs:
           find project -name "gradle.properties" | while read f; do
             printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$f"
           done
-          mkdir -p "$HOME/.gradle"
-          printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$HOME/.gradle/gradle.properties"
+
+      - name: Add namespace to app/build.gradle
+        run: |
+          BUILD_GRADLE=$(find project -path "*/app/build.gradle" | head -1)
+          echo "Found: $BUILD_GRADLE"
+          # اگه namespace قبلاً نیست، اضافه کن
+          if ! grep -q "namespace" "$BUILD_GRADLE"; then
+            sed -i "s/android {/android {\n    namespace 'com.billiardaim'/" "$BUILD_GRADLE"
+          fi
+          echo "=== build.gradle android block ==="
+          grep -A3 "android {" "$BUILD_GRADLE"
 
       - name: Build Debug APK
         run: |
-          cd project/BilliardAim
-          gradle assembleDebug --no-daemon
+          PROJECT_DIR=$(find project -name "settings.gradle" | head -1 | xargs dirname)
+          echo "Building in: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
