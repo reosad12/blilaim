@@ -27,25 +27,36 @@ jobs:
       - name: Extract ZIP
         run: unzip BilliardAim_ready.zip -d project
 
-      - name: Fix gradle.properties
+      - name: Show extracted structure
+        run: find project -type f | sort
+
+      - name: Fix ALL gradle.properties
         run: |
           find project -name "gradle.properties" | while read f; do
-            echo "=== Found: $f ==="
+            echo ">>> Fixing: $f"
             cat "$f"
             printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$f"
-            echo "=== Fixed: $f ==="
+            echo ">>> After fix:"
             cat "$f"
           done
+          # Also fix ~/.gradle/gradle.properties if exists
+          if [ -f "$HOME/.gradle/gradle.properties" ]; then
+            printf 'org.gradle.jvmargs=-Xmx2g -Xms512m\norg.gradle.daemon=false\n' > "$HOME/.gradle/gradle.properties"
+          fi
 
       - name: Make gradlew executable
-        run: chmod +x project/BilliardAim/gradlew
+        run: find project -name "gradlew" -exec chmod +x {} \;
 
       - name: Build Debug APK
-        working-directory: project/BilliardAim
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          GRADLEW=$(find project -name "gradlew" | head -1)
+          PROJ_DIR=$(dirname "$GRADLEW")
+          echo "Using gradlew: $GRADLEW"
+          cd "$PROJ_DIR"
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: BilliardAim-debug
-          path: project/BilliardAim/app/build/outputs/apk/debug/app-debug.apk
+          path: "**/app/build/outputs/apk/debug/app-debug.apk"
