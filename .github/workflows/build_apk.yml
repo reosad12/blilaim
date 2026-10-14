@@ -27,6 +27,10 @@ jobs:
       - name: Extract ZIP
         run: unzip BilliardAim_ready.zip -d project
 
+      - name: Fix gradle.properties
+        run: |
+          sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx2g -Xms512m/' project/BilliardAim/gradle.properties
+
       - name: Make gradlew executable
         run: chmod +x project/BilliardAim/gradlew
 
@@ -39,4 +43,3 @@ jobs:
         with:
           name: BilliardAim-debug
           path: project/BilliardAim/app/build/outputs/apk/debug/app-debug.apk
-          
